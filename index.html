@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PantryPal - Smart Kitchen Manager</title>
+
+  <!-- Tesseract OCR (receipt scanning) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js" defer></script>
+
+  <!-- CSS — global first, then per-page -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/pantry.css">
+  <link rel="stylesheet" href="css/scanner.css">
+  <link rel="stylesheet" href="css/recipes.css">
+  <link rel="stylesheet" href="css/planner.css">
+  <link rel="stylesheet" href="css/random.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── NAVIGATION ───────────────────────────────────────── -->
+  <nav>
+    <div class="nav-brand"><span>🥗</span> PantryPal</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('pantry')">
+        <span class="tab-icon">🧺</span> Pantry
+      </button>
+      <button class="nav-tab" onclick="showPage('scanner')">
+        <span class="tab-icon">📷</span> Scan Receipt
+      </button>
+      <button class="nav-tab" onclick="showPage('recipes')">
+        <span class="tab-icon">🍳</span> Can Make
+      </button>
+      <button class="nav-tab" onclick="showPage('almost')">
+        <span class="tab-icon">🛒</span> Almost There
+      </button>
+      <button class="nav-tab" onclick="showPage('planner')">
+        <span class="tab-icon">📅</span> Meal Planner
+      </button>
+      <button class="nav-tab" onclick="showPage('random')">
+        <span class="tab-icon">🎲</span> Random Meal
+      </button>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: PANTRY
+         JS  → js/pantry.js
+         CSS → css/pantry.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-pantry" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🧺 My Pantry</div>
+          <div class="page-subtitle">Items sorted by expiry date</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Item</button>
+      </div>
+
+      <div class="stats-bar" id="pantry-stats"></div>
+
+      <div id="expiry-notice" class="expiry-notice" style="display:none">
+        ⚠️ <strong>Use these soon!</strong> Some items are expiring in the next 3 days.
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="pantry-search" placeholder="🔍 Search items..." oninput="renderPantry()">
+        <select id="pantry-cat-filter" onchange="renderPantry()">
+          <option value="">All Categories</option>
+          <option>Produce</option><option>Dairy</option><option>Meat</option><option>Seafood</option>
+          <option>Grains</option><option>Canned</option><option>Frozen</option><option>Condiments</option>
+          <option>Spices</option><option>Snacks</option><option>Beverages</option><option>Other</option>
+        </select>
+        <select id="pantry-sort" onchange="renderPantry()">
+          <option value="expiry">Sort by Expiry</option>
+          <option value="name">Sort by Name</option>
+          <option value="category">Sort by Category</option>
+          <option value="added">Sort by Date Added</option>
+        </select>
+      </div>
+
+      <div class="card-grid" id="pantry-grid"></div>
+      <div id="pantry-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">📦</div>
+        <h3>Your pantry is empty</h3>
+        <p>Add items manually or scan a grocery receipt!</p>
+        <br>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Your First Item</button>
+      </div>
+    </div><!-- /page-pantry -->
+
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: SCANNER
+         JS  → js/scanner.js
+         CSS → css/scanner.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-scanner" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📷 Scan Receipt</div>
+          <div class="page-subtitle">Upload a grocery receipt to auto-add items</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="drop-zone" id="drop-zone"
+             onclick="document.getElementById('receipt-file').click()"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          <div class="drop-zone-icon">🧾</div>
+          <h3 style="margin-bottom:8px">Upload Your Receipt</h3>
+          <p style="color:#888;font-size:0.9em">Click to browse or drag &amp; drop a photo of your receipt</p>
+          <p style="color:#aaa;font-size:0.78em;margin-top:6px">Supports JPG, PNG, PDF</p>
+        </div>
+        <input type="file" id="receipt-file" accept="image/*,.pdf" style="display:none" onchange="processReceipt(event)">
+
+        <div id="scan-status" style="display:none">
+          <div style="margin-top:16px;font-weight:600" id="scan-status-text">Processing...</div>
+          <div class="progress-bar"><div class="progress-fill" id="scan-progress" style="width:0%"></div></div>
+          <div id="scan-raw" class="scan-result" style="display:none"></div>
+        </div>
+      </div>
+
+      <div id="scan-results" style="display:none">
+        <div class="card">
+          <h3 style="margin-bottom:16px">📋 Items Found — Review Before Adding</h3>
+          <p style="color:#888;font-size:0.85em;margin-bottom:16px">Check the items you want to add. You can edit names by clicking on them.</p>
+          <div id="parsed-items-list"></div>
+          <div id="scan-manual-add" style="margin-top:12px">
+            <input type="text" id="manual-item-input"
+                   placeholder="Didn't find an item? Add manually..."
+                   style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9em;margin-bottom:8px">
+            <button class="btn btn-gray btn-sm" onclick="addManualScanItem()">+ Add Item</button>
+          </div>
+          <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="confirmScannedItems()">✅ Add Selected to Pantry</button>
+            <button class="btn btn-gray" onclick="resetScanner()">🔄 Scan Another</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /page-scanner -->
+
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: RECIPES (Can Make)
+         JS  → js/recipes.js
+         CSS → css/recipes.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-recipes" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🍳 Recipes You Can Make</div>
+          <div class="page-subtitle">Based on your current pantry</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="recipe-search" placeholder="🔍 Search recipes..." oninput="renderRecipes()">
+        <select id="recipe-cat-filter" onchange="renderRecipes()">
+          <option value="">All Cuisines</option>
+        </select>
+      </div>
+
+      <div class="recipe-grid" id="recipe-grid"></div>
+      <div id="recipe-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">🍽️</div>
+        <h3>No recipes available</h3>
+        <p>Add more items to your pantry or check the "Almost There" tab!</p>
+      </div>
+    </div><!-- /page-recipes -->
+
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: ALMOST THERE
+         JS  → js/recipes.js  (getAlmostRecipes, almostCard, etc.)
+         CSS → css/recipes.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-almost" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🛒 Almost There</div>
+          <div class="page-subtitle">Recipes needing just a few more ingredients</div>
+        </div>
+        <div>
+          <label style="font-size:0.85em;color:#666">Missing items: </label>
+          <select id="almost-threshold" onchange="renderAlmost()"
+                  style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85em">
+            <option value="1">1 item</option>
+            <option value="2">2 items</option>
+            <option value="3" selected>3 items</option>
+            <option value="5">5 items</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="recipe-grid" id="almost-grid"></div>
+      <div id="almost-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">🎯</div>
+        <h3>No close matches found</h3>
+        <p>Try increasing the missing items threshold.</p>
+      </div>
+    </div><!-- /page-almost -->
+
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: MEAL PLANNER
+         JS  → js/planner.js
+         CSS → css/planner.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-planner" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📅 Meal Planner</div>
+          <div class="page-subtitle" id="planner-week-label"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-gray btn-sm" onclick="changeWeek(-1)">← Prev</button>
+          <button class="btn btn-gray btn-sm" onclick="changeWeek(0)">Today</button>
+          <button class="btn btn-gray btn-sm" onclick="changeWeek(1)">Next →</button>
+        </div>
+      </div>
+
+      <div class="week-grid" id="week-grid"></div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <h3>🛍️ Shopping List for This Week</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="generateShoppingList()">Generate List</button>
+            <button class="btn btn-gray btn-sm" onclick="clearCheckedShopping()">Clear Checked</button>
+            <button class="btn btn-gray btn-sm" onclick="printShoppingList()">🖨️ Print</button>
+          </div>
+        </div>
+        <div id="shopping-list-container">
+          <div class="empty-state" style="padding:30px">
+            <p>Click "Generate List" to create a shopping list based on your planned meals.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /page-planner -->
+
+
+    <!-- ════════════════════════════════════════════════════════
+         PAGE: RANDOM MEAL
+         JS  → js/random.js
+         CSS → css/random.css
+    ════════════════════════════════════════════════════════ -->
+    <div id="page-random" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🎲 Random Meal Generator</div>
+          <div class="page-subtitle">Personalised suggestions based on your history</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="random-layout">
+
+        <!-- Roll panel -->
+        <div class="card">
+          <div class="random-container">
+            <div class="random-dice" id="random-dice" onclick="rollRandom()">🎲</div>
+            <p style="color:#888;font-size:0.85em;margin-top:8px">Click to generate a meal suggestion</p>
+
+            <div id="random-result" class="random-result" style="display:none">
+              <div class="random-recipe-name" id="random-name"></div>
+              <div id="random-meta" style="color:#888;font-size:0.85em;margin-bottom:12px"></div>
+              <div id="random-ingredients" style="font-size:0.85em;color:#555;margin-bottom:16px;text-align:left"></div>
+              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <button class="btn-cook" onclick="cookRandomMeal()" style="width:auto;padding:10px 24px">🍳 Cook This!</button>
+                <button class="btn btn-gray" onclick="rollRandom()">🎲 Try Another</button>
+              </div>
+              <div style="margin-top:16px">
+                <p style="font-size:0.82em;color:#888;margin-bottom:6px">Rate this meal suggestion:</p>
+                <div id="random-stars" class="star-rating"></div>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
+              <label style="font-size:0.82em;color:#666;font-weight:600">Preferences:</label>
+              <label style="font-size:0.82em"><input type="checkbox" id="pref-pantry-only" checked> Prefer meals I can make now</label>
+              <label style="font-size:0.82em"><input type="checkbox" id="pref-favorites"> Favour my favourites</label>
+              <label style="font-size:0.82em"><input type="checkbox" id="pref-variety" checked> Avoid recent repeats</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- History panel -->
+        <div class="card">
+          <h3 style="margin-bottom:16px">📜 Meal History</h3>
+          <div id="history-list">
+            <div class="empty-state" style="padding:20px">
+              <p style="color:#aaa">No meals cooked yet. Start cooking!</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-random -->
+
+  </main>
+</div><!-- /#app -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     MODALS
+     JS → js/pantry.js (add-item), js/recipes.js (cook, meal)
+════════════════════════════════════════════════════════════ -->
+
+<!-- Add / Edit item modal -->
+<div class="modal-overlay" id="add-item-modal">
+  <div class="modal">
+    <h2 id="add-modal-title">➕ Add Pantry Item</h2>
+    <div class="form-group">
+      <label>Item Name *</label>
+      <input type="text" id="item-name" placeholder="e.g. Chicken Breast" autocomplete="off">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="item-qty" placeholder="1" min="0" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Unit</label>
+        <select id="item-unit">
+          <option value="">—</option>
+          <option>g</option><option>kg</option><option>oz</option><option>lb</option>
+          <option>ml</option><option>L</option><option>cup</option><option>tbsp</option>
+          <option>tsp</option><option>piece(s)</option><option>can(s)</option>
+          <option>bag(s)</option><option>box(es)</option><option>bunch</option><option>clove(s)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="item-category">
+        <option>Produce</option><option>Dairy</option><option>Meat</option><option>Seafood</option>
+        <option>Grains</option><option>Canned</option><option>Frozen</option><option>Condiments</option>
+        <option>Spices</option><option>Snacks</option><option>Beverages</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Expiry Date (optional)</label>
+      <input type="date" id="item-expiry">
+      <div class="expiry-input-hint">Leave blank if no expiry date</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cook confirmation modal -->
+<div class="modal-overlay" id="cook-modal">
+  <div class="modal">
+    <h2>🍳 Cook This Recipe?</h2>
+    <p style="color:#666;margin-bottom:16px;font-size:0.9em">The following items will be removed from your pantry:</p>
+    <div id="cook-deductions"></div>
+    <p style="color:#888;font-size:0.82em;margin-top:12px">Items with insufficient quantity will be removed entirely.</p>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeCookModal()">Cancel</button>
+      <button class="btn-cook" style="width:auto" onclick="confirmCook()">✅ Yes, Cook It!</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add meal to planner modal -->
+<div class="modal-overlay" id="add-meal-modal">
+  <div class="modal">
+    <h2>🍽️ Add Meal to <span id="add-meal-day-label"></span></h2>
+    <div class="form-group">
+      <label>Search Recipes</label>
+      <input type="text" id="meal-search" placeholder="Type to search..." oninput="filterMealPicker()" autocomplete="off">
+    </div>
+    <div id="meal-picker-list" style="max-height:300px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeMealModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification container -->
+<div class="toast-container" id="toasts"></div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT — loaded in dependency order
+     data.js → storage.js → utils.js → navigation.js
+     → pantry.js → scanner.js → recipes.js → planner.js
+     → random.js → app.js
+════════════════════════════════════════════════════════════ -->
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/pantry.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/recipes.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/random.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

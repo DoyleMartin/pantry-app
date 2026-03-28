@@ -1,0 +1,55 @@
+/* ============================================================
+   RECIPES.CSS — Recipe card styles (used by Recipes + Almost There)
+   ============================================================ */
+
+.recipe-card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.15s;
+}
+.recipe-card:hover { transform: translateY(-2px); }
+
+.recipe-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.recipe-name { font-weight: 700; font-size: 1.05em; }
+.recipe-time { font-size: 0.8em; color: #888; }
+.recipe-category {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-radius: 20px;
+  font-weight: 600;
+}
+.recipe-ingredients { font-size: 0.82em; color: #555; }
+.recipe-ingredients .missing { color: var(--orange); font-weight: 600; }
+.recipe-instructions {
+  font-size: 0.82em;
+  color: #666;
+  line-height: 1.5;
+  max-height: 80px;
+  overflow: hidden;
+  transition: max-height 0.3s;
+}
+.recipe-instructions.expanded { max-height: 500px; }
+.recipe-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Cook button */
+.btn-cook {
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9em;
+  width: 100%;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-cook:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(39,174,96,0.4); }

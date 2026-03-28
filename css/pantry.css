@@ -1,0 +1,66 @@
+/* ============================================================
+   PANTRY.CSS — Pantry page specific styles
+   ============================================================ */
+
+/* Pantry item cards */
+.pantry-item {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  position: relative;
+  border-left: 4px solid var(--green);
+  transition: transform 0.15s;
+}
+.pantry-item:hover { transform: translateY(-2px); }
+.pantry-item.expiring-critical { border-left-color: var(--red); }
+.pantry-item.expiring-soon { border-left-color: var(--orange); }
+.pantry-item.expiring-week { border-left-color: var(--yellow); }
+.pantry-item.expired { border-left-color: #c0392b; background: #fff5f5; }
+
+/* Item text */
+.item-name { font-weight: 600; font-size: 1em; margin-bottom: 4px; }
+.item-qty { color: #666; font-size: 0.85em; margin-bottom: 8px; }
+.item-category { font-size: 0.75em; color: #888; margin-top: 6px; text-transform: capitalize; }
+
+/* Expiry badges */
+.item-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72em; font-weight: 600; }
+.badge-expired  { background: #fdecea; color: var(--red); }
+.badge-critical { background: #fef0e7; color: var(--orange); }
+.badge-soon     { background: #fef9e7; color: var(--yellow); }
+.badge-good     { background: var(--green-light); color: var(--green-dark); }
+.badge-none     { background: #f0f0f0; color: #999; }
+
+/* Edit / delete buttons */
+.item-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  transition: background 0.15s;
+}
+.btn-icon:hover { background: #f0f0f0; }
+
+/* Quantity controls */
+.qty-controls { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.qty-btn:hover { border-color: var(--green); color: var(--green); }
+.qty-display { font-weight: 600; min-width: 40px; text-align: center; font-size: 0.9em; }
+
+/* Expiry date hint in add modal */
+.expiry-input-hint { font-size: 0.75em; color: #888; margin-top: 3px; }

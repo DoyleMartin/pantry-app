@@ -1,0 +1,44 @@
+/* ============================================================
+   SCANNER.CSS — Receipt scanner page styles
+   ============================================================ */
+
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.drop-zone:hover,
+.drop-zone.dragover { border-color: var(--green); background: var(--green-light); }
+.drop-zone-icon { font-size: 3em; margin-bottom: 12px; }
+
+.progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin: 12px 0; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.3s; }
+
+.scan-result {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 0.8em;
+  max-height: 150px;
+  overflow-y: auto;
+  margin: 12px 0;
+  white-space: pre-wrap;
+}
+
+.parsed-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: white;
+}
+.parsed-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--green); }
+.parsed-item input[type="text"] { border: none; background: transparent; font-size: 0.9em; flex: 1; font-family: inherit; }
+.parsed-item input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--green); }
